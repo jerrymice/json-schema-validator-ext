@@ -40,6 +40,8 @@ public class SchemaManager {
         //自定义一个版本，并添加else关键字
         return JsonMetaSchema.builder(V202012_EXT_V1, v202012)
                 .addKeyword(new NonValidationKeyword("else"))
+                .addKeyword(new NonValidationKeyword("error"))
+                .addKeyword(new NonValidationKeyword("defaultGlobalError"))
                 .build();
     }
 }

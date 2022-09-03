@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.ValidationResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ public class ValidatorManager {
     private String schemaFilePath;
 
     private JsonSchema jsonSchema;
+
+    private SchemaValidatorsConfig schemaValidatorsConfig;
 
     public void setObjectMapper(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -44,6 +47,14 @@ public class ValidatorManager {
         return objectMapper;
     }
 
+    public SchemaValidatorsConfig getSchemaValidatorsConfig() {
+        return schemaValidatorsConfig;
+    }
+
+    public void setSchemaValidatorsConfig(SchemaValidatorsConfig schemaValidatorsConfig) {
+        this.schemaValidatorsConfig = schemaValidatorsConfig;
+    }
+
     /**
      * @param javabean
      * @param title
@@ -55,10 +66,33 @@ public class ValidatorManager {
         return validate(javabean, title, jsonSchema);
     }
 
+    public ValidationResult walk(Object javabean, String title, boolean shouldValidateSchema) throws Exception {
+        initJsonSchema();
+        return walk(javabean, title, jsonSchema, shouldValidateSchema);
+    }
+
     public void initJsonSchema() throws Exception {
+        if (schemaValidatorsConfig == null) {
+            schemaValidatorsConfig = createDefaultSchemaValidatorsConfig();
+        }
         if (jsonSchema == null) {
             jsonSchema = createJsonSchemaByFile();
         }
+    }
+
+    /**
+     * @param javabean
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    private ValidationResult walk(Object javabean, String title, JsonSchema jsonSchema, boolean shouldValidateSchema) throws Exception {
+        String json = objectMapper.writeValueAsString(javabean);
+        JsonNode customerJsonNode = objectMapper.readTree(json);
+        ValidationResult result = jsonSchema.walk(customerJsonNode, shouldValidateSchema);
+        System.out.println();
+        logging(title, customerJsonNode, result.getValidationMessages());
+        return result;
     }
 
     /**
@@ -79,11 +113,15 @@ public class ValidatorManager {
     private JsonSchema createJsonSchemaByFile() throws IOException {
         InputStream resourceAsStream = ValidatorManager.class.getResourceAsStream(schemaFilePath);
         JsonNode jsonNode = objectMapper.readTree(resourceAsStream);
+        JsonSchema jsonSchema = SchemaManager.getSchema(jsonNode, this.schemaValidatorsConfig);
+        return jsonSchema;
+    }
+
+    public SchemaValidatorsConfig createDefaultSchemaValidatorsConfig() {
         SchemaValidatorsConfig schemaValidatorsConfig = new SchemaValidatorsConfig();
         schemaValidatorsConfig.setOpenAPI3StyleDiscriminators(false);
         schemaValidatorsConfig.setFailFast(false);
-        JsonSchema jsonSchema = SchemaManager.getSchema(jsonNode, schemaValidatorsConfig);
-        return jsonSchema;
+        return schemaValidatorsConfig;
     }
 
     /**

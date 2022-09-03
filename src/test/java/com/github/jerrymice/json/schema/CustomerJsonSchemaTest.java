@@ -23,7 +23,7 @@ public class CustomerJsonSchemaTest {
     }
 
     protected void initValidatorManager() throws Exception {
-        validatorManager.setSchemaFilePath("/CustomerSchema.json");
+        validatorManager.setSchemaFilePath("/CustMetaSchema.json");
         validatorManager.initJsonSchema();
     }
 
@@ -267,6 +267,20 @@ public class CustomerJsonSchemaTest {
         Customer customer = Customer.builder().name("白合A").age(20).sex(false).marriage(1)
                 .mate(Mate.builder().sex(false).age(22).name("白合B").build()).build();
         Set<ValidationMessage> result = validate(customer, "验证女同");
+        Assert.assertEquals(result.size(),1);
+    }
+
+
+    /**
+     * 验证姓名为空
+     *
+     * @throws Exception
+     */
+    @Test
+    public void validateNameNull() throws Exception {
+        Customer customer = Customer.builder().name(null).age(20).sex(false).marriage(1)
+                .mate(Mate.builder().sex(true).age(22).name("白白").build()).build();
+        Set<ValidationMessage> result = validate(customer, "验证姓名为空");
         Assert.assertEquals(result.size(),1);
     }
 
