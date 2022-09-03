@@ -12,6 +12,43 @@
   "allOf": [
     {
       "if": {
+        "allOf": [
+          {
+            "properties": {
+              "marriage": {
+                "type": "integer",
+                "const": 1
+              }
+            }
+          },
+          {
+            "not": {
+              "properties": {
+                "marriage": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "mate"
+        ],
+        "properties": {
+          "mate": {
+            "required": [
+              "name",
+              "age",
+              "sex"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
         "anyOf": [
           {
             "properties": {
@@ -39,29 +76,6 @@
         "properties": {
           "marriage": {
             "const": 0
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "marriage": {
-            "const": 1
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "mate"
-        ],
-        "properties": {
-          "mate": {
-            "required": [
-              "name",
-              "age",
-              "sex"
-            ]
           }
         }
       }
@@ -119,14 +133,21 @@
       "type": "boolean"
     },
     "marriage": {
-      "type":["integer","null"],
+      "type": [
+        "integer",
+        "null"
+      ],
       "enum": [
+        null,
         0,
         1
       ]
     },
     "mate": {
-      "type": ["object","null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "properties": {
         "name": {
           "type": "string",

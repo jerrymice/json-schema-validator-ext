@@ -140,6 +140,30 @@ public class CustomerJsonSchemaTest {
     }
 
     /**
+     * 验证没有marriage属性
+     * @throws Exception
+     */
+    @Test
+    public void validateMarriageNoPropertyName()throws Exception{
+        validatorManager.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        Customer customer = Customer.builder().name("涂铭鉴").age(25).sex(true).build();
+        Set<ValidationMessage> result = validate(customer, "验证已婚,没有配偶信息");
+        Assert.assertTrue(result.size() == 0);
+        validatorManager.getObjectMapper().setSerializationInclusion(JsonInclude.Include.ALWAYS);
+    }
+
+    /**
+     * 验证没有marriage属性
+     * @throws Exception
+     */
+    @Test
+    public void validateMarriageNull()throws Exception{
+        Customer customer = Customer.builder().name("涂铭鉴").age(25).marriage(null).mate(null).sex(true).build();
+        Set<ValidationMessage> result = validate(customer, "验证已婚,没有配偶信息");
+        Assert.assertTrue(result.size() == 0);
+    }
+
+    /**
      * 验证已婚,没有配偶信息
      *
      * @throws Exception
