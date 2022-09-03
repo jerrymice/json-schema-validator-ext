@@ -1,11 +1,10 @@
-package org.example.validate;
+package com.github.jerrymice.json.schema;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.github.jerrymice.schema.ValidatorManager;
+import com.github.jerrymice.json.schema.model.Customer;
+import com.github.jerrymice.json.schema.model.Mate;
 import com.networknt.schema.ValidationMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.example.validate.model.Customer;
-import org.example.validate.model.Mate;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

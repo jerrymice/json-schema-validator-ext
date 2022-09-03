@@ -1,4 +1,4 @@
-package com.github.jerrymice.schema;
+package com.github.jerrymice.json.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

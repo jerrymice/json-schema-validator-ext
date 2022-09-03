@@ -1,11 +1,6 @@
-package org.example.validate;
+package com.github.jerrymice.json.schema;
 
-import com.networknt.schema.ValidationMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.example.validate.model.Customer;
-import org.junit.Test;
-
-import java.util.Set;
 
 
 @Slf4j

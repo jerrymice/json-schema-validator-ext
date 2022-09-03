@@ -1,4 +1,4 @@
-package org.example.validate.model;
+package com.github.jerrymice.json.schema.model;
 
 
 import lombok.AllArgsConstructor;
