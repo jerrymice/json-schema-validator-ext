@@ -35,6 +35,10 @@ public class ErrorJsonSchemaTest {
         validatorManager.initJsonSchema();
     }
 
+    private void assertNoSourceValidateMessage(Set<ValidationMessage> validationMessages) {
+        long count = validationMessages.stream().filter(i -> i.getMessage().startsWith("$")).count();
+        Assert.assertEquals(count, 0);
+    }
 
     /**
      * 验证不存在name
@@ -48,6 +52,7 @@ public class ErrorJsonSchemaTest {
         ValidationResult result = validatorManager.walk(build, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 2);
         validatorManager.getObjectMapper().setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
 
@@ -61,6 +66,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂").sex(false).age(20).work(1).city("成都").build();
         ValidationResult result = validatorManager.walk(build, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -73,6 +79,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂涂涂涂涂涂涂涂涂涂涂涂涂涂").sex(false).age(20).work(1).city("成都").build();
         ValidationResult result = validatorManager.walk(build, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -90,6 +97,7 @@ public class ErrorJsonSchemaTest {
         map.put("city", "成都");
         ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -107,6 +115,7 @@ public class ErrorJsonSchemaTest {
         map.put("city", "成都");
         ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -124,6 +133,7 @@ public class ErrorJsonSchemaTest {
         map.put("city", "成都");
         ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
 
@@ -137,6 +147,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").sex(true).age(-1).work(1).city("成都").build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -149,6 +160,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").sex(true).age(120).work(1).city("成都").build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -161,6 +173,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(3).city("成都").sex(true).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -173,6 +186,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(null).city("成都").sex(true).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 0);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -185,6 +199,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成成成").sex(true).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -197,6 +212,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city(null).sex(true).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     @Test
@@ -204,6 +220,7 @@ public class ErrorJsonSchemaTest {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(3).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     @Test
@@ -212,6 +229,7 @@ public class ErrorJsonSchemaTest {
                 .mate(Mate.builder().age(19).name("杨幂").sex(true).build()).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     @Test
@@ -220,22 +238,25 @@ public class ErrorJsonSchemaTest {
                 .mate(Mate.builder().age(120).name("杨幂").sex(true).build()).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     @Test
-    public void mateNameMinLength()throws Exception{
+    public void mateNameMinLength() throws Exception {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
                 .mate(Mate.builder().age(22).name("幂").sex(true).build()).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     @Test
-    public void mateNameMaxLength()throws Exception{
+    public void mateNameMaxLength() throws Exception {
         CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
                 .mate(Mate.builder().age(22).name("杨幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂").sex(true).build()).age(110).build();
         ValidationResult result = validatorManager.walk(build, "验证age为空", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -258,6 +279,7 @@ public class ErrorJsonSchemaTest {
         map.put("mate", mate);
         ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
 
     /**
@@ -280,5 +302,8 @@ public class ErrorJsonSchemaTest {
         map.put("mate", mate);
         ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
         Assert.assertEquals(result.getValidationMessages().size(), 1);
+        assertNoSourceValidateMessage(result.getValidationMessages());
     }
+
+
 }

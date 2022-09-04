@@ -9,8 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.github.jerrymice.json.schema.KeyWordExt.ERROR_KEY;
+
 public class DefaultErrorMessagePointer implements ErrorMessagePointer {
-    private static final String ERROR_KEY_WORD = "/error";
     private Map<String, Function<ValidationMessage, String>> typeErrorPointMap = new HashMap<>();
 
     public DefaultErrorMessagePointer() {
@@ -55,13 +56,13 @@ public class DefaultErrorMessagePointer implements ErrorMessagePointer {
                 .replace("#/" + message.getType(), "")
                 .replace("/" + message.getType(), "");
         nodeAt = nodeAt.equals("") ? "" : nodeAt + "/";
-        return ERROR_KEY_WORD + "/" + nodeAt + message.getArguments()[0] + "/" +
+        return "/" + ERROR_KEY + "/" + nodeAt + message.getArguments()[0] + "/" +
                 ValidatorTypeCode.REQUIRED.getValue();
     }
 
     private String defaultPoint(ValidationMessage message) {
         String schemaPath = message.getSchemaPath();
-        return ERROR_KEY_WORD + schemaPath
+        return "/" + ERROR_KEY + schemaPath
                 .replace("#/" + ValidatorTypeCode.PROPERTIES.getValue(), "")
                 .replace("/" + ValidatorTypeCode.PROPERTIES.getValue() + "/", "/");
     }

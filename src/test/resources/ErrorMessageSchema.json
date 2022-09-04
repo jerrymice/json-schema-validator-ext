@@ -4,7 +4,7 @@
   "title": "客户信息",
   "description": "这是一个客户信息的JSON Schema描述文件",
   "type": "object",
-  "error": {
+  "$error": {
     "name": {
       "required": {
         "code": "10001",
@@ -72,7 +72,7 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 110,
-      "error": {
+      "$error": {
         "minimum": {
           "message": "【当前】年龄必须大于1",
           "code": "1001"
@@ -106,7 +106,7 @@
         0,
         1
       ],
-      "error": {
+      "$error": {
         "enum": "${/marriageStatus}"
       }
     },
@@ -120,23 +120,23 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 8,
-            "error": "${/error/name}"
+            "$error": "${/$error/name}"
           },
           "age": {
             "type": "integer",
             "minimum": 20,
             "maximum": 110,
-            "error": {
+            "$error": {
               "minimum": {
                 "code": "10007",
                 "message": "【当前】最小年龄不能小于20岁"
               },
-              "maximum": "${/error/age/maximum}"
+              "maximum": "${/$error/age/maximum}"
             }
           },
           "sex": {
             "type": "boolean",
-            "error": "${/error/sex}"
+            "$error": "${/$error/sex}"
           }
         }
       }

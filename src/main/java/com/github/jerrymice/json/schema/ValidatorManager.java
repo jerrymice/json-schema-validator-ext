@@ -93,7 +93,7 @@ public class ValidatorManager {
     private ValidationResult walk(Object javabean, String title, JsonSchema jsonSchema, boolean shouldValidateSchema) throws Exception {
         String json = objectMapper.writeValueAsString(javabean);
         JsonNode customerJsonNode = objectMapper.readTree(json);
-        ValidationResult result = jsonSchema.walk(customerJsonNode, true);
+        ValidationResult result = jsonSchema.walk(customerJsonNode, shouldValidateSchema);
         handleValidationMessage(result);
         logging(title, customerJsonNode, result.getValidationMessages());
         return result;

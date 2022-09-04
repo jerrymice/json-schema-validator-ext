@@ -21,10 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.github.jerrymice.json.schema.KeyWordExt.ERROR_CODE_KEY;
+import static com.github.jerrymice.json.schema.KeyWordExt.ERROR_KEY;
+import static com.github.jerrymice.json.schema.KeyWordExt.ERROR_MESSAGE_KEY;
+
 public class DefaultValidateMessageProvider implements ValidateMessageProvider {
-    private static final String ERROR_CODE_KEY = "code";
-    private static final String ERROR_MESSAGE_KEY = "message";
-    private static final String ERROR_KEY = "error";
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultValidateMessageProvider.class);
     protected List<ErrorMessagePointer> errorMessagePointerList = new ArrayList<>();
 
@@ -48,7 +49,7 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
         //查找rootSchemaJsonNode
         JsonNode rootSchemaNode = findRootSchemaJsonNode(walkEvent);
         //查找已经在properties对应的属性名下明确定义的error
-        JsonNode errorTypeNode = findExplicitDefErrorTypeNode(message, schemaNode, rootSchemaNode);
+        JsonNode errorTypeNode = findExplicitDefErrorTypeNode(message.getType(), schemaNode, rootSchemaNode);
         //如果找不到errorTypeNode才使用通用的错误信息
         if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
             String[] defaultErrorPoint = createErrorPropertyJsonPoint(message);
@@ -78,24 +79,24 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
      * 查找已经在该节点下面明确定义的error属性
      * <p>
      * example:
-     * {"error":"${/error/name}"};
-     * {"error":{"type":"${/error/name/type}"}};
+     * {"error":"${/$error/name}"};
+     * {"error":{"type":"${/$error/name/type}"}};
      *
-     * @param message
+     * @param type
      * @param schemaNode
      * @param rootSchemaNode
      * @return
      */
-    protected JsonNode findExplicitDefErrorTypeNode(ValidationMessage message, JsonNode schemaNode,
+    protected JsonNode findExplicitDefErrorTypeNode(String type, JsonNode schemaNode,
                                                     JsonNode rootSchemaNode) {
         //通过error和type找明确定义的节点,{"error":{"type":"${/error/name/type}"}};
-        JsonNode errorTypeNode = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
+        JsonNode errorTypeNode = schemaNode.at("/" + ERROR_KEY + "/" + type);
         if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
             ////通过error找定义的节点，并查找表达式引用,{"error":"${/error/name}"};
             JsonNode errorNode = schemaNode.at("/" + ERROR_KEY);
             if (errorNode.getNodeType().equals(JsonNodeType.STRING)) {
                 //再查找type对应的error:{"message","","code":""}
-                errorTypeNode = findErrorNodeRef(rootSchemaNode, errorNode.asText(), message.getType());
+                errorTypeNode = findErrorNodeRef(rootSchemaNode, errorNode.asText(), type);
             } else {
                 return MissingNode.getInstance();
             }
@@ -114,8 +115,8 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
      * <p>
      * example:
      * {"name":{"type":{"code":"1234","message":"名字不能为空"}}};
-     * {"name":{"type":{"code":"${/error/name/type/code}","message":"名字不能为空"}}};
-     * {"name":{"type":{"code":"${/error/name/type/code}","message":"${/error/name/type/message}"}}};
+     * {"name":{"type":{"code":"${/$error/name/type/code}","message":"名字不能为空"}}};
+     * {"name":{"type":{"code":"${/$error/name/type/code}","message":"${/$error/name/type/message}"}}};
      *
      * @param root
      * @param error
