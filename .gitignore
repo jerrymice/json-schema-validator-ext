@@ -1,3 +1,4 @@
 /target/
 /.idea/
 /validate-config.iml
+/json-schema-validator-ext.iml
