@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.MissingNode;
-import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jerrymice.json.schema.pointer.ErrorMessagePointer;
 import com.github.jerrymice.json.schema.pointer.PointFactor;
@@ -48,16 +47,9 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
         JsonNode schemaNode = walkEvent.getSchemaNode();
         //查找rootSchemaJsonNode
         JsonNode rootSchemaNode = findRootSchemaJsonNode(walkEvent);
-        //支持error[type]引用
-        JsonNode errorTypeNode = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
-        if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
-            ////支持error引用
-            JsonNode errorNode = schemaNode.at("/" + ERROR_KEY);
-            if (errorNode.getNodeType().equals(JsonNodeType.STRING)) {
-                errorTypeNode = findResolveErrorNode(rootSchemaNode, errorNode.asText(), message.getType());
-            }
-        }
-        //如果在属性下面使用了显示声明的error,那么优先使用显示的error，然后使用全局的error.
+        //查找已经在properties对应的属性名下明确定义的error
+        JsonNode errorTypeNode = findExplicitDefErrorTypeNode(message, schemaNode, rootSchemaNode);
+        //如果找不到errorTypeNode才使用通用的错误信息
         if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
             String[] defaultErrorPoint = createErrorPropertyJsonPoint(message);
             if (defaultErrorPoint == null) {
@@ -67,7 +59,7 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
             }
             //如果没有自定义的error信息
             for (String point : defaultErrorPoint) {
-                errorTypeNode = walkEvent.getParentSchema().findAncestor().getSchemaNode().at(point);
+                errorTypeNode = rootSchemaNode.at(point);
                 if (!errorTypeNode.isEmpty()) {
                     break;
                 }
@@ -77,15 +69,84 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
                 return message;
             }
         }
-        //处理error中的表达式或code与message
+        //error中的message与code属性还有${..}引用表达式，那么需要解析并处理
         errorTypeNode = findResolveMessage(rootSchemaNode, errorTypeNode);
         return buildValidationMessage(message, errorTypeNode);
+    }
+
+    /**
+     * 查找已经在该节点下面明确定义的error属性
+     * <p>
+     * example:
+     * {"error":"${/error/name}"};
+     * {"error":{"type":"${/error/name/type}"}};
+     *
+     * @param message
+     * @param schemaNode
+     * @param rootSchemaNode
+     * @return
+     */
+    protected JsonNode findExplicitDefErrorTypeNode(ValidationMessage message, JsonNode schemaNode,
+                                                    JsonNode rootSchemaNode) {
+        //通过error和type找明确定义的节点,{"error":{"type":"${/error/name/type}"}};
+        JsonNode errorTypeNode = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
+        if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
+            ////通过error找定义的节点，并查找表达式引用,{"error":"${/error/name}"};
+            JsonNode errorNode = schemaNode.at("/" + ERROR_KEY);
+            if (errorNode.getNodeType().equals(JsonNodeType.STRING)) {
+                //再查找type对应的error:{"message","","code":""}
+                errorTypeNode = findErrorNodeRef(rootSchemaNode, errorNode.asText(), message.getType());
+            } else {
+                return MissingNode.getInstance();
+            }
+        }
+        return errorTypeNode;
     }
 
 
     protected JsonNode findRootSchemaJsonNode(WalkEvent walkEvent) {
         JsonSchema ancestor = walkEvent.getParentSchema().findAncestor();
         return ancestor.getSchemaNode();
+    }
+
+    /**
+     * 递规查找错误信息和其中的引用,支持以下几种格式
+     * <p>
+     * example:
+     * {"name":{"type":{"code":"1234","message":"名字不能为空"}}};
+     * {"name":{"type":{"code":"${/error/name/type/code}","message":"名字不能为空"}}};
+     * {"name":{"type":{"code":"${/error/name/type/code}","message":"${/error/name/type/message}"}}};
+     *
+     * @param root
+     * @param error
+     * @return
+     */
+    protected JsonNode findResolveMessage(JsonNode root, JsonNode error) {
+        if (error.isObject()) {
+            JsonNode code = error.get(ERROR_CODE_KEY);
+            JsonNode message = error.get(ERROR_MESSAGE_KEY);
+            if (!isExpression(code.asText()) && !isExpression(message.asText())) {
+                return error;
+            }
+            ObjectNode result = new ObjectNode(new JsonNodeFactory(true));
+            if (isExpression(code.asText())) {
+                code = findResolveMessage(root, code);
+            }
+            if (isExpression(message.asText())) {
+                message = findResolveMessage(root, message);
+            }
+            result.set(ERROR_CODE_KEY, code);
+            result.set(ERROR_MESSAGE_KEY, message);
+            return result;
+        } else {
+            if (isExpression(error.asText())) {
+                String jsonPoint = resolveExpressionJsonPoint(error.asText());
+                JsonNode at = root.at(jsonPoint);
+                return findResolveMessage(root, at);
+            } else {
+                return error;
+            }
+        }
     }
 
     private ValidationMessage buildValidationMessage(ValidationMessage message, JsonNode error) {
@@ -141,57 +202,15 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
         return point.startsWith("/" + ERROR_KEY) ? point : "/" + ERROR_KEY + point;
     }
 
-    private JsonNode findResolveErrorNode(JsonNode root, String rawExpression, String type) {
+    private JsonNode findErrorNodeRef(JsonNode root, String rawExpression, String type) {
         String expressionJsonPoint = resolveExpressionJsonPoint(rawExpression);
         JsonNode node = root.at(expressionJsonPoint);
         if (node.getNodeType().equals(JsonNodeType.MISSING)) {
             return node;
         }
         if (node.getNodeType().equals(JsonNodeType.STRING)) {
-            return findResolveErrorNode(root, node.toString(), type);
+            return findErrorNodeRef(root, node.toString(), type);
         }
         return node.at("/" + type);
-    }
-
-    /**
-     * 递规查找错误信息和其中的引用,支持以下几种格式
-     * <p>
-     * example:
-     * {"error":"${/error/name}"};
-     * {"error":{"type":{"code":"1234","message":"名字不能为空"}}};
-     * {"error":{"type":"${/error/name/type}"}};
-     * {"error":{"type":{"code":"${/error/name/type/code}","message":"名字不能为空"}}};
-     * {"error":{"type":{"code":"${/error/name/type/code}","message":"${/error/name/type/message}"}}};
-     *
-     * @param root
-     * @param error
-     * @return
-     */
-    private JsonNode findResolveMessage(JsonNode root, JsonNode error) {
-        if (error.isObject()) {
-            JsonNode code = error.get(ERROR_CODE_KEY);
-            JsonNode message = error.get(ERROR_MESSAGE_KEY);
-            if (!isExpression(code.asText()) && !isExpression(message.asText())) {
-                return error;
-            }
-            ObjectNode result = new ObjectNode(new JsonNodeFactory(true));
-            if (isExpression(code.asText())) {
-                code = findResolveMessage(root, code);
-            }
-            if (isExpression(message.asText())) {
-                message = findResolveMessage(root, message);
-            }
-            result.set(ERROR_CODE_KEY, code);
-            result.set(ERROR_MESSAGE_KEY, message);
-            return result;
-        } else {
-            if (isExpression(error.asText())) {
-                String jsonPoint = resolveExpressionJsonPoint(error.asText());
-                JsonNode at = root.at(jsonPoint);
-                return findResolveMessage(root, at);
-            } else {
-                return error;
-            }
-        }
     }
 }
