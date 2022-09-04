@@ -2,6 +2,7 @@ package com.github.jerrymice.json.schema.provider.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jerrymice.json.schema.pointer.ErrorMessagePointer;
 import com.github.jerrymice.json.schema.pointer.PointFactor;
@@ -10,6 +11,7 @@ import com.github.jerrymice.json.schema.provider.ValidateMessageProvider;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.walk.WalkEvent;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +46,24 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
         JsonNode schemaNode = walkEvent.getSchemaNode();
         JsonNode error = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
         //如果在属性下面使用了显示声明的error,那么优先使用显示的error，然后使用全局的error.
-        if (error.isEmpty()) {
-            String defaultErrorPoint = createErrorPropertyJsonPoint(message);
+        if (error.isObject() && error.size() == 0
+                || error.getNodeType().equals(JsonNodeType.MISSING)) {
+            String[] defaultErrorPoint = createErrorPropertyJsonPoint(message);
+            if (defaultErrorPoint == null) {
+                LOGGER.warn("找不到对应的ErrorMessagePointer,type:{},schema path:{},message:{}",
+                        message.getType(), message.getSchemaPath(), message.getMessage());
+                return message;
+            }
             //如果没有自定义的error信息
-            error = walkEvent.getParentSchema().findAncestor().getSchemaNode().at(defaultErrorPoint);
+            for (String point : defaultErrorPoint) {
+                error = walkEvent.getParentSchema().findAncestor().getSchemaNode().at(point);
+                if (!error.isEmpty()) {
+                    break;
+                }
+            }
+            //如果还是没找到那么返回最原始的message
             if (error.isEmpty()) {
-                throw new UnsupportedOperationException("不支持的操作,找不到对应的ErrorMessage,point:" + defaultErrorPoint);
+                return message;
             }
         }
         //查找rootSchemaJsonNode
@@ -93,7 +107,7 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
                 .format(new MessageFormat("")).build();
     }
 
-    private String createErrorPropertyJsonPoint(ValidationMessage message) {
+    private String[] createErrorPropertyJsonPoint(ValidationMessage message) {
         String errorPropertyPoint = null;
         for (ErrorMessagePointer processor : errorMessagePointerList) {
             PointFactor pointFactor = new PointFactor(message);
@@ -103,10 +117,10 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
                 break;
             }
         }
-        if (errorPropertyPoint == null) {
-            throw new UnsupportedOperationException("不支持的操作,找不到对应的ErrorMessagePointer");
+        if (errorPropertyPoint == null || StringUtils.isBlank(errorPropertyPoint)) {
+            return null;
         }
-        return errorPropertyPoint;
+        return errorPropertyPoint.split(",");
     }
 
     private boolean isExpression(String value) {

@@ -71,6 +71,9 @@ public class ErrorMessageRewriteWalkListener implements JsonSchemaWalkListener {
      */
     private ValidationMessage rewrite(WalkEvent walkEvent, ValidationMessage message) {
         try {
+            if (!message.getMessage().startsWith("$.")) {
+                return message;
+            }
             return validateMessageProvider.rewrite(walkEvent, message);
         } catch (Exception e) {
             JsonNode schemaNode = walkEvent.getSchemaNode();

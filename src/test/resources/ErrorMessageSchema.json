@@ -5,11 +5,55 @@
   "description": "这是一个客户信息的JSON Schema描述文件",
   "type": "object",
   "error": {
-    "required": {
-      "name": {
+    "name": {
+      "required": {
         "code": "10001",
-        "message": "姓名不能为空"
+        "message": "姓名属性必填"
+      },
+      "minLength": {
+        "code": "10003",
+        "message": "姓名至少两个汉字"
+      },
+      "maxLength": {
+        "code": "10003",
+        "message": "姓名最多8个汉字"
+      },
+      "type": {
+        "code": "10003",
+        "message": "姓名必须是汉字或英文"
       }
+    },
+    "sex": {
+      "required": {
+        "code": "10002",
+        "message": "性别属性必填"
+      },
+      "type": {
+        "code": "10003",
+        "message": "姓别属性必须是true或者false"
+      }
+    },
+    "age": {
+      "maximum": {
+        "code": "10003",
+        "message": "【通用】年龄必须小于110"
+      }
+    },
+    "work": {
+      "enum": {
+        "code": "10004",
+        "message": "工作状态属性值必须是0或1"
+      }
+    },
+    "city": {
+      "const": {
+        "code": "10004",
+        "message": "城市的属性值只能是成都"
+      }
+    },
+    "marriageStatus": {
+        "code": "10007",
+        "message": "婚姻状态只能null,或者0.未婚；1.已婚"
     }
   },
   "required": [
@@ -18,7 +62,9 @@
   ],
   "properties": {
     "name": {
-      "type": ["string","null"],
+      "type": [
+        "string"
+      ],
       "minLength": 2,
       "maxLength": 8
     },
@@ -27,14 +73,28 @@
       "minimum": 1,
       "maximum": 110,
       "error": {
-        "type": {
-          "message": "年龄不能为空",
+        "minimum": {
+          "message": "【当前】年龄必须大于1",
           "code": "1001"
         }
       }
     },
     "sex": {
       "type": "boolean"
+    },
+    "work": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "enum": [
+        null,
+        0,
+        1
+      ]
+    },
+    "city": {
+      "const": "成都"
     },
     "marriage": {
       "type": [
@@ -45,7 +105,34 @@
         null,
         0,
         1
-      ]
+      ],
+      "error": {
+        "enum": "${/marriageStatus}"
+      }
+    },
+      "mate": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 8,
+            "error": "${error/name}"
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 110,
+            "error": "${error/age}"
+          },
+          "sex": {
+            "type": "boolean",
+            "error": "${error/sex}"
+          }
+        }
+      }
     }
   }
-}

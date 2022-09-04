@@ -10,7 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ValidatorManager {
@@ -89,10 +93,29 @@ public class ValidatorManager {
     private ValidationResult walk(Object javabean, String title, JsonSchema jsonSchema, boolean shouldValidateSchema) throws Exception {
         String json = objectMapper.writeValueAsString(javabean);
         JsonNode customerJsonNode = objectMapper.readTree(json);
-        ValidationResult result = jsonSchema.walk(customerJsonNode, shouldValidateSchema);
-        System.out.println();
+        ValidationResult result = jsonSchema.walk(customerJsonNode, true);
+        handleValidationMessage(result);
         logging(title, customerJsonNode, result.getValidationMessages());
         return result;
+    }
+
+    private void handleValidationMessage(ValidationResult result) {
+        Set<ValidationMessage> validationMessages = result.getValidationMessages();
+        Iterator<ValidationMessage> iterator = validationMessages.iterator();
+        Set<String> newMessageUnionIdSet = validationMessages.stream().filter(i -> !i.getMessage().startsWith("$.")).map(this::getMessageUnionId).collect(Collectors.toSet());
+        while (iterator.hasNext()) {
+            ValidationMessage next = iterator.next();
+            String unionId = getMessageUnionId(next);
+            if (next.getMessage().startsWith("$.") && newMessageUnionIdSet.contains(unionId)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private String getMessageUnionId(ValidationMessage next) {
+        String args = next.getArguments() != null && next.getArguments().length > 0 ? next.getArguments()[0] : "";
+        String unionId = next.getType() + "/" + next.getSchemaPath() + "/" + next.getPath() + "/" + args;
+        return unionId;
     }
 
     /**
@@ -132,6 +155,7 @@ public class ValidatorManager {
      * @param validate
      */
     private static void logging(String title, JsonNode customerJsonNode, Set<ValidationMessage> validate) {
+        System.out.println();
         if (validate.isEmpty()) {
             log.info("{} 验证 start", title);
             log.info(customerJsonNode.toString());
