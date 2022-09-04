@@ -1,0 +1,168 @@
+{
+  "$id": "https://www.example.com/json/schema/customer",
+  "$schema": "https://json-schema.org/draft/2020-12-ext-v1/schema#",
+  "title": "客户信息",
+  "description": "这是一个客户信息的JSON Schema描述文件",
+  "type": "object",
+  "required": [
+    "name",
+    "sex",
+    "age"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "allOf": [
+          {
+            "properties": {
+              "marriage": {
+                "type": "integer",
+                "const": 1
+              }
+            }
+          },
+          {
+            "not": {
+              "properties": {
+                "marriage": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "mate"
+        ],
+        "properties": {
+          "mate": {
+            "required": [
+              "name",
+              "age",
+              "sex"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "age": {
+                "exclusiveMaximum": 22
+              },
+              "sex": {
+                "const": true
+              }
+            }
+          },
+          {
+            "properties": {
+              "age": {
+                "exclusiveMaximum": 20
+              },
+              "sex": {
+                "const": false
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "marriage": {
+            "const": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "sex": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "mate": {
+            "properties": {
+              "age": {
+                "minimum": 20
+              },
+              "sex": {
+                "const": false
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "mate": {
+            "properties": {
+              "age": {
+                "minimum": 22
+              },
+              "sex": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 8
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 110
+    },
+    "sex": {
+      "type": "boolean"
+    },
+    "marriage": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "enum": [
+        null,
+        0,
+        1
+      ]
+    },
+    "mate": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        },
+        "age": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 110
+        },
+        "sex": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

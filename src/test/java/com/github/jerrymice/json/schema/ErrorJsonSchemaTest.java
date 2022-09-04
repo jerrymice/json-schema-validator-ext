@@ -5,31 +5,48 @@ import com.github.jerrymice.json.schema.listener.ErrorMessageRewriteWalkListener
 import com.github.jerrymice.json.schema.model.Customer;
 import com.github.jerrymice.json.schema.model.CustomerExt;
 import com.github.jerrymice.json.schema.model.Mate;
+import com.google.inject.internal.util.Sets;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.ValidationResult;
+import com.networknt.schema.ValidatorTypeCode;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ErrorJsonSchemaTest {
     protected ValidatorManager validatorManager = new ValidatorManager();
-
+    private Set<String> includeKeyWordSet = new HashSet<>();
 
     @Before
     public void beforeValidatorManager() throws Exception {
+        Set<String> excludeKeywords = Sets.newHashSet();
+        excludeKeywords.add(ValidatorTypeCode.PROPERTIES.getValue());
+        excludeKeywords.add(ValidatorTypeCode.NOT.getValue());
+        excludeKeywords.add(ValidatorTypeCode.NOT_ALLOWED.getValue());
+        excludeKeywords.add(ValidatorTypeCode.ONE_OF.getValue());
+        excludeKeywords.add(ValidatorTypeCode.ALL_OF.getValue());
+        excludeKeywords.add(ValidatorTypeCode.ANY_OF.getValue());
+        Set<String> collect = Arrays.stream(ValidatorTypeCode.values()).map(ValidatorTypeCode::getValue).collect(Collectors.toSet());
+        collect.removeAll(excludeKeywords);
+        includeKeyWordSet.addAll(collect);
         initValidatorManager();
     }
 
     protected void initValidatorManager() throws Exception {
         SchemaValidatorsConfig defaultSchemaValidatorsConfig = validatorManager.createDefaultSchemaValidatorsConfig();
         ErrorMessageRewriteWalkListener errorMessageRewriteWalkListener = new ErrorMessageRewriteWalkListener();
-        defaultSchemaValidatorsConfig.addPropertyWalkListener(errorMessageRewriteWalkListener);
+        includeKeyWordSet.forEach(i -> {
+            defaultSchemaValidatorsConfig.addKeywordWalkListener(i, errorMessageRewriteWalkListener);
+        });
         validatorManager.setSchemaValidatorsConfig(defaultSchemaValidatorsConfig);
         validatorManager.setSchemaFilePath("/ErrorMessageSchema.json");
         validatorManager.initJsonSchema();

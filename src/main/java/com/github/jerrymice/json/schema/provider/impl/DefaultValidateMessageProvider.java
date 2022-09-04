@@ -106,6 +106,9 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
 
 
     protected JsonNode findRootSchemaJsonNode(WalkEvent walkEvent) {
+        if (walkEvent.getParentSchema() == null) {
+            return walkEvent.getSchemaNode();
+        }
         JsonSchema ancestor = walkEvent.getParentSchema().findAncestor();
         return ancestor.getSchemaNode();
     }
