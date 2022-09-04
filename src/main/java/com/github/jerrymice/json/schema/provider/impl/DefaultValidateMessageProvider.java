@@ -3,6 +3,8 @@ package com.github.jerrymice.json.schema.provider.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.MissingNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jerrymice.json.schema.pointer.ErrorMessagePointer;
 import com.github.jerrymice.json.schema.pointer.PointFactor;
@@ -44,10 +46,19 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
     @Override
     public ValidationMessage rewrite(WalkEvent walkEvent, ValidationMessage message) {
         JsonNode schemaNode = walkEvent.getSchemaNode();
-        JsonNode error = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
+        //查找rootSchemaJsonNode
+        JsonNode rootSchemaNode = findRootSchemaJsonNode(walkEvent);
+        //支持error[type]引用
+        JsonNode errorTypeNode = schemaNode.at("/" + ERROR_KEY + "/" + message.getType());
+        if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
+            ////支持error引用
+            JsonNode errorNode = schemaNode.at("/" + ERROR_KEY);
+            if (errorNode.getNodeType().equals(JsonNodeType.STRING)) {
+                errorTypeNode = findResolveErrorNode(rootSchemaNode, errorNode.asText(), message.getType());
+            }
+        }
         //如果在属性下面使用了显示声明的error,那么优先使用显示的error，然后使用全局的error.
-        if (error.isObject() && error.size() == 0
-                || error.getNodeType().equals(JsonNodeType.MISSING)) {
+        if (errorTypeNode.getNodeType().equals(JsonNodeType.MISSING)) {
             String[] defaultErrorPoint = createErrorPropertyJsonPoint(message);
             if (defaultErrorPoint == null) {
                 LOGGER.warn("找不到对应的ErrorMessagePointer,type:{},schema path:{},message:{}",
@@ -56,21 +67,19 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
             }
             //如果没有自定义的error信息
             for (String point : defaultErrorPoint) {
-                error = walkEvent.getParentSchema().findAncestor().getSchemaNode().at(point);
-                if (!error.isEmpty()) {
+                errorTypeNode = walkEvent.getParentSchema().findAncestor().getSchemaNode().at(point);
+                if (!errorTypeNode.isEmpty()) {
                     break;
                 }
             }
             //如果还是没找到那么返回最原始的message
-            if (error.isEmpty()) {
+            if (errorTypeNode.isEmpty()) {
                 return message;
             }
         }
-        //查找rootSchemaJsonNode
-        JsonNode rootSchemaNode = findRootSchemaJsonNode(walkEvent);
         //处理error中的表达式或code与message
-        error = findResolveMessage(rootSchemaNode, error);
-        return buildValidationMessage(message, error);
+        errorTypeNode = findResolveMessage(rootSchemaNode, errorTypeNode);
+        return buildValidationMessage(message, errorTypeNode);
     }
 
 
@@ -130,6 +139,18 @@ public class DefaultValidateMessageProvider implements ValidateMessageProvider {
     private String resolveExpressionJsonPoint(String value) {
         String point = value.replace("${", "").replace("}", "");
         return point.startsWith("/" + ERROR_KEY) ? point : "/" + ERROR_KEY + point;
+    }
+
+    private JsonNode findResolveErrorNode(JsonNode root, String rawExpression, String type) {
+        String expressionJsonPoint = resolveExpressionJsonPoint(rawExpression);
+        JsonNode node = root.at(expressionJsonPoint);
+        if (node.getNodeType().equals(JsonNodeType.MISSING)) {
+            return node;
+        }
+        if (node.getNodeType().equals(JsonNodeType.STRING)) {
+            return findResolveErrorNode(root, node.toString(), type);
+        }
+        return node.at("/" + type);
     }
 
     /**

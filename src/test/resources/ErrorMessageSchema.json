@@ -120,17 +120,23 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 8,
-            "error": "${error/name}"
+            "error": "${/error/name}"
           },
           "age": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 20,
             "maximum": 110,
-            "error": "${error/age}"
+            "error": {
+              "minimum": {
+                "code": "10007",
+                "message": "【当前】最小年龄不能小于20岁"
+              },
+              "maximum": "${/error/age/maximum}"
+            }
           },
           "sex": {
             "type": "boolean",
-            "error": "${error/sex}"
+            "error": "${/error/sex}"
           }
         }
       }

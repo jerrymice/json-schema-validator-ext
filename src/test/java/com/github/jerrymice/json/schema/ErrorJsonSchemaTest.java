@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.github.jerrymice.json.schema.listener.ErrorMessageRewriteWalkListener;
 import com.github.jerrymice.json.schema.model.Customer;
 import com.github.jerrymice.json.schema.model.CustomerExt;
+import com.github.jerrymice.json.schema.model.Mate;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.ValidationResult;
@@ -205,4 +206,79 @@ public class ErrorJsonSchemaTest {
         Assert.assertEquals(result.getValidationMessages().size(), 1);
     }
 
+    @Test
+    public void mateAgeMinimum() throws Exception {
+        CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
+                .mate(Mate.builder().age(19).name("杨幂").sex(true).build()).age(110).build();
+        ValidationResult result = validatorManager.walk(build, "验证age为空", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
+
+    @Test
+    public void mateAgeMaximum() throws Exception {
+        CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
+                .mate(Mate.builder().age(120).name("杨幂").sex(true).build()).age(110).build();
+        ValidationResult result = validatorManager.walk(build, "验证age为空", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
+
+    @Test
+    public void mateNameMinLength()throws Exception{
+        CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
+                .mate(Mate.builder().age(22).name("幂").sex(true).build()).age(110).build();
+        ValidationResult result = validatorManager.walk(build, "验证age为空", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
+
+    @Test
+    public void mateNameMaxLength()throws Exception{
+        CustomerExt build = CustomerExt.builder().name("涂铭鉴").work(1).city("成都").sex(true).marriage(1)
+                .mate(Mate.builder().age(22).name("杨幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂幂").sex(true).build()).age(110).build();
+        ValidationResult result = validatorManager.walk(build, "验证age为空", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
+
+    /**
+     * 验证minLength
+     *
+     * @throws Exception
+     */
+    @Test
+    public void metaSexType() throws Exception {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("name", "涂铭鉴");
+        map.put("sex", true);
+        map.put("age", 22);
+        map.put("work", 1);
+        map.put("city", "成都");
+        HashMap<String, Object> mate = new HashMap<>();
+        mate.put("name", "杨幂");
+        mate.put("sex", 123);
+        mate.put("age", 20);
+        map.put("mate", mate);
+        ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
+
+    /**
+     * 验证minLength
+     *
+     * @throws Exception
+     */
+    @Test
+    public void metaSexNull() throws Exception {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("name", "涂铭鉴");
+        map.put("sex", true);
+        map.put("age", 22);
+        map.put("work", 1);
+        map.put("city", "成都");
+        HashMap<String, Object> mate = new HashMap<>();
+        mate.put("name", "杨幂");
+        mate.put("sex", null);
+        mate.put("age", 20);
+        map.put("mate", mate);
+        ValidationResult result = validatorManager.walk(map, "验证name不存在", true);
+        Assert.assertEquals(result.getValidationMessages().size(), 1);
+    }
 }
