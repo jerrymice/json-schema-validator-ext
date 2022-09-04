@@ -5,32 +5,10 @@
   "description": "这是一个客户信息的JSON Schema描述文件",
   "type": "object",
   "error": {
-    "defaultGlobalError": {
-      "code": "1001",
-      "message": "参数验证失败"
-    },
-    "defaultRequiredError": {
-      "code": "1002",
-      "message": "参数不能为空"
-    },
-    "defaultTypeError": {
-      "code": "1003",
-      "message": "参数类型出错"
-    },
-    "customError": {
-      "requiredError": {
-        "name": {
-          "code": "10001",
-          "message": "姓名不能为空"
-        },
-        "sex": {
-          "code": "10002",
-          "message": "性别不能为空"
-        },
-        "age": {
-          "code": "10003",
-          "message": "年龄不能为空"
-        }
+    "required": {
+      "name": {
+        "code": "10001",
+        "message": "姓名不能为空"
       }
     }
   },

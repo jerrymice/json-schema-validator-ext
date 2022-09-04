@@ -1,7 +1,7 @@
 package com.github.jerrymice.json.schema;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.github.jerrymice.json.schema.listener.ErrorMessageWalkListener;
+import com.github.jerrymice.json.schema.listener.ErrorMessageRewriteWalkListener;
 import com.github.jerrymice.json.schema.model.Customer;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.ValidationMessage;
@@ -25,9 +25,8 @@ public class ErrorJsonSchemaTest {
 
     protected void initValidatorManager() throws Exception {
         SchemaValidatorsConfig defaultSchemaValidatorsConfig = validatorManager.createDefaultSchemaValidatorsConfig();
-        ErrorMessageWalkListener errorMessageWalkListener = new ErrorMessageWalkListener();
-        defaultSchemaValidatorsConfig.addPropertyWalkListener(errorMessageWalkListener);
-//        defaultSchemaValidatorsConfig.addKeywordWalkListener(errorMessageWalkListener);
+        ErrorMessageRewriteWalkListener errorMessageRewriteWalkListener = new ErrorMessageRewriteWalkListener();
+        defaultSchemaValidatorsConfig.addPropertyWalkListener(errorMessageRewriteWalkListener);
         validatorManager.setSchemaValidatorsConfig(defaultSchemaValidatorsConfig);
         validatorManager.setSchemaFilePath("/ErrorMessageSchema.json");
         validatorManager.initJsonSchema();

@@ -14,16 +14,16 @@ import org.slf4j.event.Level;
 
 import java.util.Set;
 
-public class ErrorMessageWalkListener implements JsonSchemaWalkListener {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ErrorMessageWalkListener.class);
+public class ErrorMessageRewriteWalkListener implements JsonSchemaWalkListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ErrorMessageRewriteWalkListener.class);
     private Level loggerLevel = Level.WARN;
     private ValidateMessageProvider validateMessageProvider;
 
-    public ErrorMessageWalkListener() {
+    public ErrorMessageRewriteWalkListener() {
         validateMessageProvider = new DefaultValidateMessageProvider();
     }
 
-    public ErrorMessageWalkListener(ValidateMessageProvider validateMessageProvider) {
+    public ErrorMessageRewriteWalkListener(ValidateMessageProvider validateMessageProvider) {
         this.validateMessageProvider = validateMessageProvider;
     }
 
